@@ -1,0 +1,50 @@
+RécupérationArchiveFTP
+
+// Paramètres de connexion
+DEF serveurFTP = "ftp://ftpserver.example.com"
+DEF utilisateurFTP = "ftp_user"
+DEF motDePasseFTP = "ftp_password"
+DEF cheminArchiveDistant = "/remote/path/archive.zip"
+DEF cheminArchiveLocal = "C:\Archives\archive.zip"
+DEF cheminFichierLog = "C:\Archives\ftp_log.txt"
+
+// Début de la récupération
+PRINT_LOG("Début de la récupération")
+
+// Vérification de la connexion au serveur FTP
+TRY
+    // Établir la connexion FTP
+    CREATE connexionFTP
+    DEF méthode = "TéléchargerFichier"
+    DEF identifiants = (utilisateurFTP, motDePasseFTP)
+    DEF mode = transfert binaire
+
+    // Vérifier l'existence du fichier sur le serveur distant
+    IF fichier_existe_sur_serveur(cheminArchiveDistant) ALORS
+        // Téléchargement de l'archive
+        OPEN stream de téléchargement
+        READ contenuFichier depuis serveurFTP
+        PRINT contenuFichier dans cheminArchiveLocal
+        CLOSE stream
+
+        // Vérification de l'intégrité du fichier
+        IF vérifier_intégrité_fichier(cheminArchiveLocal) ALORS
+            ÉCRIRE_LOG("Téléchargement réussi et fichier intègre")
+        ELSE
+            ÉCRIRE_LOG("Erreur : Fichier corrompu pendant le transfert")
+            SUPPRIMER fichier local
+            ARRÊTER_SCRIPT
+        END IF
+
+    ELSE
+        PRINT_LOG("Erreur : Le fichier distant n'existe pas")
+        STOP_SCRIPT
+    END IF
+
+ELSE (en cas d'erreur de connexion)
+    // Gestion des erreurs de connexion
+    PRINT_LOG("Erreur de connexion FTP")
+    STOP_SCRIPT
+
+// Fin de la récupération
+PRINT_LOG("Fin de la récupération")

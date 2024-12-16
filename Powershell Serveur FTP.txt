@@ -1,0 +1,43 @@
+# Paramètres
+$LocalArchivePath = "C:\Archives\archive.zip"         # Chemin local de l'archive à envoyer
+$FtpServer = "ftp://ftpserver.example.com"            # Adresse du serveur FTP distant
+$FtpUser = "ftp_user"                                 # Nom d'utilisateur FTP
+$FtpPassword = "ftp_password"                        # Mot de passe FTP
+$RemotePath = "/remote/path/archive.zip"              # Chemin distant pour le fichier sur le serveur FTP
+$LogFilePath = "C:\Archives\ftp_log.txt"              # Chemin pour le fichier de log
+
+
+"--- Début de l'exécution : $(Get-Date) ---" | Out-File -FilePath $LogFilePath -Append
+
+
+if (!(Test-Path -Path $LocalArchivePath)) {
+    "Erreur : Le fichier local $LocalArchivePath est introuvable." | Out-File -FilePath $LogFilePath -Append
+    Exit 1
+}
+
+try {
+
+
+    $FtpRequest = [System.Net.FtpWebRequest]::Create("$FtpServer$RemotePath")
+    $FtpRequest.Method = [System.Net.WebRequestMethods+Ftp]::UploadFile
+    $FtpRequest.Credentials = New-Object System.Net.NetworkCredential($FtpUser, $FtpPassword)
+    $FtpRequest.UseBinary = $true
+
+
+    $FileContent = [System.IO.File]::ReadAllBytes($LocalArchivePath)
+    $FtpRequest.ContentLength = $FileContent.Length
+
+
+    $RequestStream = $FtpRequest.GetRequestStream()
+    $RequestStream.Write($FileContent, 0, $FileContent.Length)
+    $RequestStream.Close()
+
+
+    "Transfert réussi : $LocalArchivePath -> $FtpServer$RemotePath" | Out-File -FilePath $LogFilePath -Append
+} catch {
+    "Erreur lors du transfert FTP : $_" | Out-File -FilePath $LogFilePath -Append
+    Exit 1
+}
+
+
+"--- Fin de l'exécution : $(Get-Date) ---" | Out-File -FilePath $LogFilePath -Append
